@@ -2,9 +2,7 @@
 Maze Builder is an editor for game boards
 
 
-Scope: creates and saves a top-down, 2d maze or architectural space of interconnected rooms or locations in a specialized binary format which can
-
-
+Scope: creates and saves a top-down, 2d maze or architectural space of interconnected rooms or locations in a specialized binary format which can be loaded and used by other applets
 
 
 Components and InForm methods
