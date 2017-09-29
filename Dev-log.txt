@@ -1,0 +1,29 @@
+Mon
+made outline document. I think I remembered most of the product features I was interested in
+
+Made initial layout in UiEditor
+
+The prog was prompting me when I hit save, so I looked and the name said Form1 for the 
+so I set the caption to MazeBuilder 1.0 (b) for beta, then changed back to look at the name field (I saw it matching the change to Caption) and then the preview form disappeared and the main window was unresponsive. I had to kill the editor without saving.
+
+Recalling the undo file I snapshotted everything in the InForm directory, and tried tinkering with the undo function, finding that I could advance the "head" of the undo by just making or moving widgets around. After that copying UiEditorUndo.dat from my snapshot made the undo command restore my lost layout.  Neat
+
+Appears that can-have-focus doesn't work, for buttons, at least; modeified .frm to explicitly set values to false
+
+Couldn't get begindraw to work on my PB, no matter what
+
+Tues
+Made a repo for MazeBuilder
+
+Weds
+Adapting my old code. I expect it to take really really well
+
+Will I need the control ID to be derive-able from the name of picture box jigsaws?  I don't think so.
+
+---
+Here comes the project's first big design decision: how to implement my group of tiles?
+
+I think I need to use two widgets per tile: a frame to move and detect clicks, and a PB to display my tile offset by an amount (x,y) of course.
+
+Thurs
+Updated repo
