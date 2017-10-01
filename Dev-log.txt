@@ -27,3 +27,19 @@ I think I need to use two widgets per tile: a frame to move and detect clicks, a
 
 Thurs
 Updated repo
+
+Fri
+Have a really frustrating and annoying experience with List Box control items not being selectable on a particular List
+
+Sat
+
+I've gradually realized because of the hackery I employ to display tiles, and how InForm's hover function presently only gives the top widget's ID, I'll have to write helper functions for every little thing. Hopefully it didn't create too much work.
+
+On the other hand, writing up the event functions *feels* easy.
+
+I'm tired of writing translations of indexing systems.
+
+Zordering seems to fail as pertains to frames. specifically when no child (contained) widgets's ordered above its parent then no widget can be above the frame, regardless of order, but this is inconsistent & to be above the frame a widget would need to be above all child widgets of frame.
+As the zorder dialog list shows order to be first-created:lowest z, there should be no trouble creating a frame and then its children programmatically, but to reiterate, this might be inconsistent.
+
+Lacking any clue, I will probably just drop a few features and revert to a simpler implementation mainly right now I need a hint to continue, about what can be done about controlling zorder
