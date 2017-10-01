@@ -34,16 +34,16 @@ E. Connections take the appearance of paths
 F. Rooms can be marked with a unique string to demark a special instance and such
 
 G. Conveniences
-preview mode : move a sprite through the area
-kbd reassign menu
-menu to provide paged printable sized png output files
-undo: each operation creates a old state component as well as normal changes
+*preview mode : move a sprite through the area
+*kbd reassign menu
+*menu to provide paged printable sized png output files
+*undo: each operation creates a old state component as well as normal changes
 
 
 **save file will contain
 
-size of header : Map header and extra information
-size of room data : room locations
-size of path data : connection details
-size of offset data : the offsets of rooms
-size of custom value data, e.g. customized stats for a room
+*size of header : Map header and extra information
+*size of room data : room locations
+*size of path data : connection details
+*size of offset data : the offsets of rooms
+*size of custom value data, e.g. customized stats for a room
