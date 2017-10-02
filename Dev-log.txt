@@ -43,3 +43,29 @@ Zordering seems to fail as pertains to frames. specifically when no child (conta
 As the zorder dialog list shows order to be first-created:lowest z, there should be no trouble creating a frame and then its children programmatically, but to reiterate, this might be inconsistent.
 
 Lacking any clue, I will probably just drop a few features and revert to a simpler implementation mainly right now I need a hint to continue, about what can be done about controlling zorder
+
+
+Sun
+Did a little debugging, uploaded to the hub
+
+The 'Doi!' moment of the day was when I realized my brilliant extender function as written functioned only for parent-less widgets. Oddly enough however, though the control's I had intended to target would still be trapped by the routine, my custom event handler AreaClick did not work as I had wanted, in that it mistranslated its input parameters to the ControlSweep sub. Groan
+
+STATE OF THE PROJECT
+
+World expand feature really stalled. I left half of the insert-line functionality unmade. insert row has to be tested 1st
+
+Mouse drag has not been set up, but rmb on the area works
+
+horizontal scrolling is set for trial
+
+Still to do is the zoom routines set
+
+functions that don't work are cancelrsz, MapResource, left clicking.  wait... really?
+================================================
+
+Regarding undo, my implementation idea starts to form. since the undoable actions largely take place exclusively in view, delta areas can be copied and cataloged as they are changed. as long as they're given the same calcs for mapping as the normal sync routine, they'll be all that's needed 
+
+NTS: remember, when you set up a timer based sub to merge a rooms delta with the main rooms(), to check at the start and at the end whether an edit occurs during the merge, and mark the merge partial in such a case
+
+
+
