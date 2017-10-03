@@ -1624,7 +1624,7 @@ END SUB
 
 
 FUNCTION NextTime! (timedelta AS SINGLE)
-NextTime! = (TIMER(.001) + timedelta) MOD 86400 'just prevent out of bounds values when comparing TIMER output
+NextTime! = (TIMER(.001) + timedelta) - (nt! \ 86400) * 86400 'just prevent out of bounds values when comparing TIMER output
 END FUNCTION
 
 
