@@ -4,130 +4,126 @@
 '-----------------------------------------------------------
 SUB __UI_LoadForm
 
-    $RESIZE:ON
-    DIM __UI_NewID AS LONG
+$RESIZE:OFF
+DIM __UI_NewID AS LONG
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Form, "MazeBuilder10B", 1024, 768, 0, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Form, "MazeBuilder", 1024, 768, 0, 0, 0)
     SetCaption __UI_NewID, "MazeBuilder 1.0 (b)"
     Control(__UI_NewID).Font = SetFont("", 16, "")
     Control(__UI_NewID).CanResize = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "Frame1", 230, 150, 752, 612, 0)
-    SetCaption __UI_NewID, "Frame1"
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).Value = 2
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "Frame", 163, 23, 65, 389, 0)
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).VAlign = __UI_Middle
-    Control(__UI_NewID).Value = 2
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "Frame3", 164, 24, 60, 458, 0)
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).Value = 1
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "Area", 898, 546, 123, 43, 0)
-    SetCaption __UI_NewID, "Frame4"
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).VAlign = __UI_Middle
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "Frame5", 65, 64, 366, 676, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "Ccursor", 65, 64, 366, 676, 0)
     SetCaption __UI_NewID, "Frame5"
-    Control(__UI_NewID).ForeColor = _RGB32(144, 76, 0)
+    Control(__UI_NewID).BorderColor = _RGB32(144, 76, 0)
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).VAlign = __UI_Middle
     Control(__UI_NewID).Hidden = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button1", 45, 45, 287, 622, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "Frame1", 230, 150, 752, 612, 0)
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).Value = 3
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "Frame2", 163, 23, 797, 670, 0)
+    Control(__UI_NewID).BackStyle = __UI_Transparent
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+    Control(__UI_NewID).Value = 2
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "Frame3", 164, 24, 794, 691, 0)
+    Control(__UI_NewID).BackStyle = __UI_Transparent
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+    Control(__UI_NewID).Value = 2
+
+    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "Scrolltrial2", 80, 534, 957, 30, 0)
+    Control(__UI_NewID).BackStyle = __UI_Transparent
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush1", 45, 45, 287, 622, 0)
     SetCaption __UI_NewID, "Button1"
     Control(__UI_NewID).VAlign = __UI_Middle
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button4BT", 45, 45, 376, 685, 0)
-    SetCaption __UI_NewID, "Button4"
-    Control(__UI_NewID).VAlign = __UI_Middle
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button3", 45, 45, 549, 685, 0)
-    SetCaption __UI_NewID, "Button3"
-    Control(__UI_NewID).VAlign = __UI_Middle
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button4", 45, 45, 466, 685, 0)
-    SetCaption __UI_NewID, "Button4"
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button22", 45, 45, 376, 622, 0)
-    SetCaption __UI_NewID, "Button3"
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button2", 45, 45, 287, 685, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush2", 45, 45, 287, 685, 0)
     SetCaption __UI_NewID, "Button6"
+    Control(__UI_NewID).VAlign = __UI_Middle
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button7", 45, 45, 626, 622, 0)
-    SetCaption __UI_NewID, "Button7"
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush3", 45, 45, 376, 622, 0)
+    SetCaption __UI_NewID, "Button3"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button7BT", 45, 45, 549, 622, 0)
-    SetCaption __UI_NewID, "Button7"
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush4", 45, 45, 376, 685, 0)
+    SetCaption __UI_NewID, "Button4"
+    Control(__UI_NewID).VAlign = __UI_Middle
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button10BT", 45, 45, 626, 685, 0)
-    SetCaption __UI_NewID, "Button10"
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button42", 45, 45, 466, 622, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush5", 45, 45, 466, 622, 0)
     SetCaption __UI_NewID, "Button5"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button11", 45, 45, 704, 685, 0)
-    SetCaption __UI_NewID, "Button11"
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush6", 45, 45, 466, 685, 0)
+    SetCaption __UI_NewID, "Button4"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button12", 45, 45, 704, 622, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush7", 45, 45, 549, 622, 0)
+    SetCaption __UI_NewID, "Button7"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush8", 45, 45, 549, 685, 0)
+    SetCaption __UI_NewID, "Button3"
+    Control(__UI_NewID).VAlign = __UI_Middle
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush9", 45, 45, 626, 622, 0)
+    SetCaption __UI_NewID, "Button7"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush10", 45, 45, 626, 685, 0)
+    SetCaption __UI_NewID, "Button10"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush11", 45, 45, 704, 622, 0)
     SetCaption __UI_NewID, "Button12"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "PictureBox1", 879, 550, 132, 39, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Brush12", 45, 45, 704, 686, 0)
+    SetCaption __UI_NewID, "Button11"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "Area", 899, 507, 124, 65, 0)
     Control(__UI_NewID).Stretch = True
     Control(__UI_NewID).HasBorder = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button13", 80, 23, 50, 633, 0)
-    SetCaption __UI_NewID, "Button13"
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "StandardBT", 80, 23, 50, 633, 0)
+    SetCaption __UI_NewID, "Standard"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button14", 80, 23, 50, 665, 0)
-    SetCaption __UI_NewID, "Button14"
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "SlowingBT", 80, 23, 50, 665, 0)
+    SetCaption __UI_NewID, "Slowing"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "TextTT", 119, 23, 50, 577, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "HardBT", 80, 23, 50, 696, 0)
+    SetCaption __UI_NewID, "Hard"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "KeyedBT", 80, 23, 50, 727, 0)
+    SetCaption __UI_NewID, "Keyed"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "TTText", 119, 23, 35, 608, 0)
     SetCaption __UI_NewID, "Treasure Type"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button15", 80, 23, 50, 696, 0)
-    SetCaption __UI_NewID, "Button15"
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button16", 80, 23, 50, 727, 0)
-    SetCaption __UI_NewID, "Button16"
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "Button17", 80, 23, 144, 633, 0)
-    SetCaption __UI_NewID, "Button17"
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "TrackBar1", 150, 40, 772, 604, 0)
-    Control(__UI_NewID).Max = 10
-    Control(__UI_NewID).CanHaveFocus = True
-    Control(__UI_NewID).Interval = 1
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "expandLB", 150, 23, 43, 40, __UI_GetID("Frame1"))
-    SetCaption __UI_NewID, "-expand-"
-    Control(__UI_NewID).Align = __UI_Center
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "LabelTT", 107, 23, 9, 576, 0)
     Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "OneWayBT", 80, 23, 144, 633, 0)
+    SetCaption __UI_NewID, "One-Way"
+    Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "EnterBT", 80, 23, 24, 16, 0)
     SetCaption __UI_NewID, "Enter"
@@ -145,7 +141,22 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Expand"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_RadioButton, "TopRB", 68, 23, 79, 3, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "Scrolltrial", 855, 40, 123, 571, 0)
+    Control(__UI_NewID).Max = 10
+    Control(__UI_NewID).CanHaveFocus = True
+    Control(__UI_NewID).Interval = 1
+
+    __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "ZoomBar", 150, 40, 772, 604, 0)
+    Control(__UI_NewID).Max = 10
+    Control(__UI_NewID).CanHaveFocus = True
+    Control(__UI_NewID).Interval = 1
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "expandLB", 150, 23, 36, 40, __UI_GetID("Frame1"))
+    SetCaption __UI_NewID, "-expand-"
+    Control(__UI_NewID).Align = __UI_Center
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_RadioButton, "TopRB", 68, 23, 79, 3, __UI_GetID("Frame3"))
     SetCaption __UI_NewID, "Top"
     Control(__UI_NewID).CanHaveFocus = True
 
@@ -153,61 +164,75 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Bottom"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_RadioButton, "RightRB", 82, 25, 4, 0, __UI_GetID("Frame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_RadioButton, "RightRB", 82, 25, 4, 0, __UI_GetID("Frame2"))
     SetCaption __UI_NewID, "Right"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_RadioButton, "LeftRB", 82, 25, 71, 0, __UI_GetID("Frame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_RadioButton, "LeftRB", 82, 25, 71, 0, __UI_GetID("Frame2"))
     SetCaption __UI_NewID, "Left"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "LabelTT", 150, 23, 34, 543, 0)
-    Control(__UI_NewID).VAlign = __UI_Middle
-
-    __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "TrackBar3", 174, 40, 31, 108, __UI_GetID("Frame1"))
+    __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "ExpandBar", 174, 40, 31, 108, __UI_GetID("Frame1"))
     Control(__UI_NewID).VAlign = __UI_Middle
     Control(__UI_NewID).Max = 10
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).Interval = 1
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "ApplyBT", 80, 23, 67, 13, __UI_GetID("Frame1"))
+    SetCaption __UI_NewID, "A&pply"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "BrushLevelList", 122, 23, 141, 723, 0)
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).Value = 1
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "Cursor", 80, 60, 66, 50, 0)
+    Control(__UI_NewID).Stretch = True
+    Control(__UI_NewID).HasBorder = True
+
 END SUB
 
 SUB __UI_AssignIDs
-    MazeBuilder10B = __UI_GetID("MazeBuilder10B")
-    Button1 = __UI_GetID("Button1")
-    Button4BT = __UI_GetID("Button4BT")
-    Button3 = __UI_GetID("Button3")
-    Button4 = __UI_GetID("Button4")
-    Button22 = __UI_GetID("Button22")
-    Button2 = __UI_GetID("Button2")
-    Button7 = __UI_GetID("Button7")
-    Button7BT = __UI_GetID("Button7BT")
-    Button10BT = __UI_GetID("Button10BT")
-    Button42 = __UI_GetID("Button42")
-    Button11 = __UI_GetID("Button11")
-    Button12 = __UI_GetID("Button12")
-    PictureBox1 = __UI_GetID("PictureBox1")
-    Button13 = __UI_GetID("Button13")
-    Button14 = __UI_GetID("Button14")
-    TextTT = __UI_GetID("TextTT")
-    Button15 = __UI_GetID("Button15")
-    Button16 = __UI_GetID("Button16")
-    Button17 = __UI_GetID("Button17")
-    TrackBar1 = __UI_GetID("TrackBar1")
-    Frame1 = __UI_GetID("Frame1")
-    Frame = __UI_GetID("Frame")
-    expandLB = __UI_GetID("expandLB")
+    MazeBuilder = __UI_GetID("MazeBuilder")
+    Ccursor = __UI_GetID("Ccursor")
+    Scrolltrial2 = __UI_GetID("Scrolltrial2")
+    Brush1 = __UI_GetID("Brush1")
+    Brush2 = __UI_GetID("Brush2")
+    Brush3 = __UI_GetID("Brush3")
+    Brush4 = __UI_GetID("Brush4")
+    Brush5 = __UI_GetID("Brush5")
+    Brush6 = __UI_GetID("Brush6")
+    Brush7 = __UI_GetID("Brush7")
+    Brush8 = __UI_GetID("Brush8")
+    Brush9 = __UI_GetID("Brush9")
+    Brush10 = __UI_GetID("Brush10")
+    Brush11 = __UI_GetID("Brush11")
+    Brush12 = __UI_GetID("Brush12")
+    Area = __UI_GetID("Area")
+    StandardBT = __UI_GetID("StandardBT")
+    SlowingBT = __UI_GetID("SlowingBT")
+    HardBT = __UI_GetID("HardBT")
+    KeyedBT = __UI_GetID("KeyedBT")
+    TTText = __UI_GetID("TTText")
+    LabelTT = __UI_GetID("LabelTT")
+    OneWayBT = __UI_GetID("OneWayBT")
     EnterBT = __UI_GetID("EnterBT")
     LoadBT = __UI_GetID("LoadBT")
     SaveBT = __UI_GetID("SaveBT")
     ExpandBT = __UI_GetID("ExpandBT")
-    TopRB = __UI_GetID("TopRB")
+    Scrolltrial = __UI_GetID("Scrolltrial")
+    ZoomBar = __UI_GetID("ZoomBar")
+    Frame1 = __UI_GetID("Frame1")
+    Frame2 = __UI_GetID("Frame2")
     Frame3 = __UI_GetID("Frame3")
+    expandLB = __UI_GetID("expandLB")
+    TopRB = __UI_GetID("TopRB")
     BottomRB = __UI_GetID("BottomRB")
     RightRB = __UI_GetID("RightRB")
     LeftRB = __UI_GetID("LeftRB")
-    LabelTT = __UI_GetID("LabelTT")
-    TrackBar3 = __UI_GetID("TrackBar3")
-    Area = __UI_GetID("Area")
-    Frame5 = __UI_GetID("Frame5")
+    ExpandBar = __UI_GetID("ExpandBar")
+    ApplyBT = __UI_GetID("ApplyBT")
+    BrushLevelList = __UI_GetID("BrushLevelList")
+    Cursor = __UI_GetID("Cursor")
 END SUB
