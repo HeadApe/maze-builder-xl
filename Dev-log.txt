@@ -67,5 +67,6 @@ Regarding undo, my implementation idea starts to form. since the undoable action
 
 NTS: remember, when you set up a timer based sub to merge a rooms delta with the main rooms(), to check at the start and at the end whether an edit occurs during the merge, and mark the merge partial in such a case
 
-
+Wed
+Spent some time plotting how to simplify my design. No time to work on MB this week. I may need to scrap the scroll-n-zoom style interface because I lack time to figure out the calculations and such, but there is no reason I couldn't implement a paged presentation instead, on top of what I've made so far.
 
