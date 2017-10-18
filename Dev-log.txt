@@ -70,3 +70,8 @@ NTS: remember, when you set up a timer based sub to merge a rooms delta with the
 Wed
 Spent some time plotting how to simplify my design. No time to work on MB this week. I may need to scrap the scroll-n-zoom style interface because I lack time to figure out the calculations and such, but there is no reason I couldn't implement a paged presentation instead, on top of what I've made so far.
 
+10/18
+various business prevents me from updating this project, but I'm hoping to have time to get back on it before the month is out.
+
+
+
