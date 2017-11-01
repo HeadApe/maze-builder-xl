@@ -4,7 +4,6 @@
 '-----------------------------------------------------------
 
 ': Controls' IDs: ------------------------------------------------------------------
-DIM SHARED __drag_complete AS _BYTE
 DIM SHARED MazeBuilder AS LONG
 DIM SHARED Ccursor AS LONG
 DIM SHARED Frame3 AS LONG
@@ -27,6 +26,7 @@ DIM SHARED StandardBT AS LONG
 DIM SHARED SlowingBT AS LONG
 DIM SHARED LabelTT AS LONG
 DIM SHARED TTText AS LONG
+
 DIM SHARED HardBT AS LONG
 DIM SHARED KeyedBT AS LONG
 DIM SHARED OneWayBT AS LONG
@@ -46,10 +46,14 @@ DIM SHARED LeftRB AS LONG
 DIM SHARED ExpandBar AS LONG
 DIM SHARED ApplyBT AS LONG
 
+DIM SHARED __drag_complete AS _BYTE
 DIM SHARED BrushLevelList AS LONG
 DIM SHARED Cursor AS LONG
 
 CONST __uix_unfiltered = -2
+CONST Right = 2, Left = 1, Middle = 3
+
+
 REDIM SHARED uix_sweeplist(0) AS LONG
 
 ' MazeBuilder Base Types
@@ -116,8 +120,8 @@ TYPE InputControl
 END TYPE
 
 CONST res_room = 1, res_cave = 2, res_foun = 3, res_shri = 4
-CONST dblclick_thresh = .35 'seconds that may pass between clicks
-CONST drag_thresh = .55 'seconds that may pass before a mousedown is treated as a drag
+CONST dblclick_thresh = .29 'seconds that may pass between clicks
+CONST drag_thresh = .35 'seconds that may pass before a mousedown is treated as a drag
 
 DIM zoom_mults(8) AS SINGLE
 
@@ -129,7 +133,7 @@ DIM SHARED scroll.top, scroll.left, zoom.value ', zoom.width, zoom.height
 redim SHARED rooms(0) AS room, paths(0) AS room, _
         visualfacts(0  ) AS roomsup, roomboxsize as intpair
 
-REDIM SHARED lib_rooms_main(0) AS room, lib_roomsup_main(0) AS room
+REDIM SHARED lib_rooms_main(0) AS room, lib_roomsup_main(0) AS room 'as opposed to roomboxsize these are buffers of parts of main box
 
 REDIM SHARED AreaArr(0, 0) AS LONG, areadim AS intpair
 DIM SHARED VirtualOffset AS intpair
@@ -143,19 +147,38 @@ LoadResources
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
+__orgwidth_Area = _WIDTH: __orgheight_Area = _HEIGHT
 
 END SUB
 
 SUB __UI_OnLoad
 
 
+'  # # # # # swaps
+
+'SWAP Control(Frame1), Control(Frame3)
+'SWAP Control(Frame1).ID, Control(Frame3).ID
+'s1i = Frame1: s2i = Frame3
+'FOR i& = 101 TO UBOUND(control)
+'    pi = Control(i&).ParentID
+'    IF pi = s1i THEN Control(i&).ParentID = s2i ELSE IF pi = s2i THEN Control(i&).ParentID = s1i
+'NEXT i&
+
+
+app.brush = Chamb
+Caption(Brush1) = "Chamb": Caption(Brush2) = "Cave"
+Caption(Brush3) = "Fount": Caption(Brush4) = "Shrine"
+'CONST None = 0, Chamb = 1, Cave = 2, MajorTreasure = 7, miNorTreasure = 8, Market = 5
+'CONST Fount = 3, Relic = 6, Shrine = 4, Entry = 9
+
 FOR i = 1 TO 5
     AddItem BrushLevelList, STR$(i)
 NEXT
 
 
+
 InVisiblate
-Cursor = Zupreme(Cursor)
+'Cursor = Zupreme(Cursor)
 BeginDraw Cursor
 DIM this AS __UI_ControlTYPE
 CLS , &H606868C0
@@ -168,8 +191,17 @@ LINE (this.Width \ 2, this.Height * .2)-STEP(0, this.Height * .6), &HFFFF3F3F
 CIRCLE STEP(0, 4), 5, &HFFFF3F3F: CIRCLE STEP(0, -8 - this.Height * .6), 5, &HFFFF3F3F
 EndDraw Cursor
 
+' Work cosmetic adjustments
+'  Control(Frame1).Left = Control(ExpandBT).Left-30-     Control(Frame1).Width
+'  Control(Frame3).Left=Control(ExpandBT).Left-30-     Control(Frame3).Width
+
+'Control(Ccursor).BackColor = Control(Ccursor).BackColor AND &H00FFFFFF
+'no good, destroy
 
 Control(Frame1).Hidden = True
+'Control(Frame2).Hidden = True
+'ok= __ui_newcontrol( __ui_type_ ,1,1,1,1,0)
+'Control(Frame3).Hidden = True
 
 'frame doesn't work for me, try picbox
 DIM holder_x AS __UI_ControlTYPE
@@ -196,10 +228,15 @@ Control(Scrolltrial2).Disabled = False
 FOR i = 1 TO 48
     AddItem Scrolltrial2, "HH. H"
 NEXT i
-
+'Control(Scrolltrial).HasBorder = False
 Control(Scrolltrial).Disabled = False
 Control(Area).Disabled = False
+'Control(Scrolltrial).Min = 1: Control(Scrolltrial).Max = 10: Control(Scrolltrial).Interval = 2
 
+'Control(Frame2).Top = Control(expandLB).Top + Control(expandLB).Height + 15
+'Control(Frame2).Left = Control(expandLB).Left - 34
+'Control(Frame3).Top = Control(expandLB).Top + Control(Frame).Height + Control(expandLB).Height + 12
+'Control(Frame3).Left = Control(expandLB).Left - 34
 Control(Frame2).Top = Control(ExpandBT).Top + Control(Frame2).Height
 Control(Frame2).Left = Control(ExpandBT).Left - 34 - Control(Frame2).Width
 Control(Frame3).Top = Control(expandLB).Top + Control(Frame3).Height * 2
@@ -212,89 +249,8 @@ Control(BottomRB).Value = True
 ' SAMPLE- Set up blank area
 Control(Area).Width = Control(Area).Width - 75
 
-'!examp -- actually set virtual dims 1st
-areadim.a = 9: areadim.z = areadim.a
-areadim.a = 16 ': areadim.z = 11
+LoadProj 1
 
-
-'virtual components
-REDIM rooms(areadim.a * areadim.z) AS room
-REDIM visualfacts(areadim.a * areadim.z) AS roomsup
-
-ADvalidate
-
-'!examp
-roomboxsize.a = areadim.a: roomboxsize.z = areadim.z:
-
-'cleanup (as needed)
-FOR ix = 1 TO UBOUND(areaarr, 1)
-    FOR iy = 1 TO UBOUND(areaarr, 2)
-        px = AreaArr(ix, iy)
-        IF px THEN
-            noti = FindKid(px): IF noti > 0 THEN __UI_DestroyControl Control(noti)
-            __UI_DestroyControl Control(px) ' mean for the control to have contiguous indices
-        END IF
-NEXT: NEXT
-ERASE AreaArr: REDIM AreaArr(areadim.a, areadim.z) AS LONG
-
-
-'AreaArr(ix, iy)
-' offset a buncha new widgets from the picturebox's vertex
-box = Control(Area).Left: boy = Control(Area).Top
-SHARED prefix1$2, prefix2$2: prefix1$2 = "^A": prefix2$2 = "AA"
-FOR ix = 1 TO areadim.a ' UBOUND(areaarr, 1)
-    FOR iy = 1 TO areadim.z ' UBOUND(areaarr, 2)
-        ic& = ic& + 1
-        '  AreaArr(ix, iy) = __UI_NewControl(__UI_Type_PictureBox, "AA" + LTRIM$(STR$(ic&)), zoom.width, zoom.height, (ix - 1) * zoom.width, (iy - 1) * zoom.height, Area)
-        '  AreaArr(ix, iy) = __UI_NewControl(__UI_Type_Frame, "^A" + LTRIM$(STR$(ic&)), zoom.width, zoom.height, box + (ix - 1) * zoom.width, boy + (iy - 1) * zoom.height, 0)
-        'at unscaled size here
-        SHARED zoom.crit
-
-        ' diag
-        IF (ix - 1) * app.roomwidth * zoom.width = 0 THEN app.roomwidth = 80: zoom.crit = True: app.roomheight = 53:
-
-
-        AreaArr(ix, iy) = __UI_NewControl(__UI_Type_Frame, prefix1$2 + LTRIM$(STR$(ic&))_
-            , app.roomwidth* zoom.width - 1, app.roomheight* zoom.height-1,_
-            box + (ix - 1) * app.roomwidth * zoom.width, boy + (iy - 1) * app.roomheight * zoom.height, 0)
-        Control(AreaArr(ix, iy)).HasBorder = False
-        Control(AreaArr(ix, iy)).BackColor = Control(AreaArr(ix, iy)).BackColor AND &H00FFFFFF
-        'u' set em clear
-NEXT: NEXT: ic& = 0
-controlrange.min = AreaArr(1, 1): controlrange.max = AreaArr(areadim.a, areadim.z)
-'now same
-FOR ix = 1 TO UBOUND(areaarr, 1)
-    FOR iy = 1 TO UBOUND(areaarr, 2)
-        ic& = ic& + 1
-        '?"        nameless = __UI_NewControl(__UI_Type_PictureBox, prefix2$2 + LTRIM$(STR$(ic&)), app.roomwidth, app.roomheight, 1, 1, AreaArr(ix, iy))
-        'is !THIS why?         nameless = __UI_NewControl(__UI_Type_PictureBox, prefix2$2 + LTRIM$(STR$(ic&)), app.roomwidth, app.roomheight, 1, 1, AreaArr(ix, iy))
-        nameless = __UI_NewControl(__UI_Type_PictureBox, prefix2$2 + LTRIM$(STR$(ic&)), app.roomwidth, app.roomheight, 0, 0, AreaArr(ix, iy))
-
-
-        IF Control(AreaArr(ix, iy)).Value < 1 THEN Control(AreaArr(ix, iy)).Value = 1
-
-        'u' Control(AreaArr(ix, iy)).Hidden = True
-        IF ix MOD 2 THEN 'ix <= 2 AND iy <= 3 THEN
-
-            spotchange FindKid(AreaArr(ix, iy)), rooms((-1 + iy) * roomboxsize.a + ix).rmdesc
-
-            PaintYou FindKid(AreaArr(ix, iy)), rooms((-1 + iy) * roomboxsize.a + ix).rmdesc
-        ELSE
-            'don't it work?
-            ' MapResource 0, nameless
-            '  MapResource 0, FindKid(AreaArr(ix, iy))
-            PaintYou FindKid(AreaArr(ix, iy)), rooms((-1 + iy) * roomboxsize.a + ix).rmdesc
-
-        END IF
-
-
-NEXT: NEXT
-
-
-
-VirtualOffset.a = 1: VirtualOffset.z = 1
-
-Cursor = Zupreme(Cursor)
 '?consider minimum creation requirements when calling __UI_NewControl
 '?for frame, .VAlign
 'for button, .Font
@@ -303,14 +259,17 @@ Cursor = Zupreme(Cursor)
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-'   ^ &)     ^ &)      ^ &)     ^ &)      ^ &)     ^ &)      ^ &)     ^ &)      ^ &)     ^ &)
+'   ^ &)     ^ &      ^ &     ^ &      ^ &     ^ &      ^ &     ^ &      ^ &     ^ &)
 
-' detect drag
-'orig
-IF AreaCursor.dragstart > 0 THEN IF TIMER(.001) > AreaCursor.dragstart AND ABS(AreaCursor.dragstart - TIMER) < 50000 THEN AreaCursor.dragon = True: AreaCursor.dragstart = -1
+__drag_complete = False
+IF __UI_MouseButton1 THEN
+    IF AreaCursor.dragstart > 0 THEN IF TIMER(.001) > AreaCursor.dragstart AND ABS(AreaCursor.dragstart - TIMER(.001)) < 50000 THEN AreaCursor.dragon = True: AreaCursor.dragstart = -1
 
-'' misc
+END IF
+'IF AreaCursor.dragstart > 0 AND TIMER(.001) > AreaCursor.dragstart THEN AreaCursor.dragon = True ' : AreaCursor.dragstart = 0
+'override an event
 
+SHARED onlyonce_1: onlyonce_1 = True 'or for e.g. for once only process
 
 '''' detect hovers    ''''
 
@@ -324,12 +283,29 @@ REDIM My.sweeplist(UBOUND(uix_sweeplist)) AS LONG
 FOR i = UBOUND(uix_sweeplist) TO 1 STEP -1: My.sweeplist(i) = uix_sweeplist(i): NEXT i
 REDIM uix_sweeplist(0) AS LONG
 
+' when design mode active, ie when dragging a tile:
+' watch that controls don't get the design cursor, etc
+IF __UI_DesignMode THEN
+    FOR i = 1 TO UBOUND(control)
+        IF Control(i).Type <> 0 THEN Control(i).ControlIsSelected = False
+    NEXT i
+: END IF
+IF __UI_IsDragging THEN
+    PathOrSwap
+END IF
+IF __UI_MouseButton1 = 0 THEN __UI_DesignMode = False
+
+
+
 'STATIC ms_type&& ' doesn't srike the rite aesthetic
 'IF Feel = Area THEN ms_type&& = ms_type&& XOR -1: IF ms_type&& THEN _MOUSEHIDE: _MOUSESHOW "TOPLEFT_BOTTOMRIGHT" ELSE _MOUSEHIDE: _MOUSESHOW "TOPRIGHT_BOTTOMLEFT" 'did not really work as expected
-IF Feel <> Area THEN _MOUSESHOW "DEFAULT"
+'IF Feel <> Area THEN _MOUSESHOW "DEFAULT"
 
-'''''''' work the area
-' moved to: _Click
+'''''''' work the hotkeys
+
+'disused
+'UI_or_KeyPress My.sweeplist()
+
 
 'got any single do flags?
 SHARED fSingle_area_click_done AS _BYTE
@@ -340,22 +316,22 @@ prevRMBstate = newRMBstate: newRMBstate = RMBstate
 
 
 IF NOT (prevRMBstate IMP newRMBstate) THEN
-    '  DIM pp AS intpair, pq AS intpair
-    ''pp.a = __UI_MouseLeft - Control(Feel).Left: pp.z = __UI_MouseTop - Control(Feel).Top
-    pp.a = __UI_MouseLeft: pp.z = __UI_MouseTop
-    ' Pull out and activate tile Frame if one has been clicked
-    pq.a = pp.a + 1: pq.z = pp.z + 1
-    CALL SweepControls(pp, pq)
-    '    FOR g = 1 TO UBOUND(uix_sweeplist)
-    FOR g = 1 TO UBOUND(My.sweeplist)
-        '       AreaClick uix_sweeplist(g)
-        AreaClick My.sweeplist(g)
-    NEXT g
-    '  REDIM uix_sweeplist(0) AS LONG
 
+    FOR i = UBOUND(My.sweeplist) TO 0 STEP -1
+        IF i = 0 THEN
+            cin = My.sweeplist(UBOUND(My.sweeplist))
+        ELSE
+            IF Control(My.sweeplist(i)).Type = __UI_Type_Frame THEN cin = My.sweeplist(i): EXIT FOR
+        END IF ' prioritizes frames (as tile containers)
+
+    NEXT i
+    __UI_MouseUp -cin '-Area
 END IF 'onetime rmb hand-o
 
-
+'if you ensure that focus stays on something which accepts keypresses, then see in keypress sub about keyhit
+IF INSTR("3, 5,6,7,8,9,10,11,12,13, 15", LTRIM$(STR$(Control(__UI_Focus).Type))) = 0 THEN
+    FOR i = 101 TO UBOUND(control): IF Control(i).Type = __UI_Type_ListBox OR Control(i).Type = __UI_Type_Button THEN __UI_Focus = i: EXIT FOR
+NEXT: END IF
 
 
 END SUB
@@ -368,7 +344,11 @@ END SUB
 SUB AreaClick (id AS LONG)
 SELECT CASE id
     CASE controlrange.min TO controlrange.max
-        diag_call_reg "fc": diag_call_reg CHR$(1)
+
+        ' SHARED grg: grg = grg + 1
+        ''        SetCaption button1, STR$(grg)
+        ' Text(TTText) = Text(TTText) + STR$(grg)
+        'frame name is set when displayed , but what if
 
         'translate control id to the rooms(id) ; wish for an easier way of doing this
         local_a = VirtualOffset.a - 1 + roomboxsize.a * (VirtualOffset.z - 1) + id - controlrange.min
@@ -377,88 +357,56 @@ SELECT CASE id
         spotchange id, local_a
         __UI_ForceRedraw = True
 
+
         spotchange id, local_a
         __UI_ForceRedraw = True
 END SELECT
 END SUB
 
 SUB __UI_MouseUp (id AS LONG)
-SHARED DoMoveCursor: DoMoveCursor = False
-SHARED __drag_complete AS _BYTE, __cross_dispatch_top
-IF __cross_dispatch_top THEN GOTO top_select:
-
-IF AreaCursor.dragon THEN __drag_complete = True: AreaCursor.dragon = False
 
 
-IF appctl.dclickstart > 0 THEN IF appctl.dclickstart < TIMER(.001) AND ABS(appctl.dclickstart - TIMER) < 50000 THEN we_are_double = True: appctl.dclickstart = NextTime(dblclick_thresh)
-
-IF we_are_double THEN ' doesn't work for nuts
-    lib_rooms_main(local_a).rmdesc = Shrine 'app.brush
-
-    spotchange id, local_a
-    __UI_ForceRedraw = True
-    ' / & & & end-double click handler
-    we_are_double = False
+IF id < 0 THEN
+    'negative id's are non-left clicks sent to here
+    b_is_rmb = True
+    id = -id
 ELSE
-    IF __drag_complete THEN 'OR AreaCursor.dragon THEN
+    IF AreaCursor.dragon THEN __drag_complete = True: AreaCursor.dragon = False
+    'modify id to point at the frame of interest
+    IF __UI_MouseTop <= Control(Area).Top + Control(Area).Height THEN
+        IF __UI_MouseTop >= Control(Area).Top AND __UI_MouseLeft <= Control(Area).Left + Control(Area).Width AND __UI_MouseLeft >= Control(Area).Left THEN
+            IF __drag_complete THEN
+                GOTO SpecialMouseUp
+            ELSE
+                'providing this was NOT a drag we'll skip to using AreaCursor.dragcontext for our target tile
+                id = AreaCursor.dragcontext
+            END IF
+    END IF: END IF
 
-
-        '--> here
-        'FOR i = 1 TO UBOUND(my.sweeplist)
-        '    IF Control(My.sweeplist(i)).Type = __UI_Type_Frame THEN cin = My.sweeplist(i)
-        'NEXT i
-
-        'CarryRoom AreaCursor.dragcontext, cin
-
-
-        '__drag_complete = False '-- this is saved for the _Click handler sub
-    END IF
-
-    GOTO area_handler:
 END IF
 
-
-
-top_select:
-
 SELECT CASE id
-    CASE MazeBuilder
 
-    CASE Brush1, Brush2, Brush3, Brush4, Brush5,  Brush6,_
-        Brush7, Brush8, Brush9, Brush10, Brush11, Brush12
-        'move cursor
-
-        Control(Ccursor).Hidden = False
-        '   Control(Ccursor).BorderColor = _RGBA32(255, 180, 0, 255)
-        Control(Ccursor).Top = Control(id).Top - 9
-        Control(Ccursor).Left = Control(id).Left - 9
-        '  __UI_ForceRedraw = True
-
-
-    CASE Area
-
-    CASE ApplyBT
-        Control(Frame1).Hidden = True
-        Control(ExpandBT).Hidden = False: Control(ExpandBT).Disabled = False
-        Control(ZoomBar).Disabled = False
+    CASE controlrange.min TO controlrange.max
+        IF b_is_rmb THEN Control(id).rmdesc = None ELSE Control(id).rmdesc = app.brush
+        PaintYou FindKid(id), Control(id).rmdesc
         __UI_ForceRedraw = True
-    CASE Button13, Button14, Button15, Button16, Button17
-        Control(Ccursor).Hidden = False
-        '   Control(Ccursor).BorderColor = _RGBA32(255, 180, 0, 255)
-        Control(Ccursor).Top = Control(BrushLevelList).Top + 4
-        Control(Ccursor).Left = Control(BrushLevelList).Left + 4
+    CASE Area
+        '  disused:
+        IF bid = Right THEN
+            local_a = VirtualOffset.a - 1 + roomboxsize.a * (VirtualOffset.z - 1) + cin - controlrange.min
+            rooms(local_a).rmdesc = None 'app.brush
+            spotchange id, local_a
+            __UI_ForceRedraw = True
 
-    CASE TextTT
+        END IF
 
-    CASE ZoomBar
 
-    CASE Frame1
-
-    CASE Frame
-
-    CASE Frame3
-
-    CASE Ccursor
+        ' CASE ApplyBT
+        '    Control(Frame1).Hidden = True
+        '    Control(ExpandBT).Hidden = False: Control(ExpandBT).Disabled = False
+        '    Control(ZoomBar).Disabled = False
+        '    __UI_ForceRedraw = True
 
     CASE ExpandBT
         Control(Frame1).Hidden = False
@@ -470,79 +418,76 @@ SELECT CASE id
         Control(ZoomBar).Disabled = True
         __UI_ForceRedraw = True
 
-    CASE expandLB
+        'CASE expandLB
 
-    CASE TopRB
+        'CASE TopRB
 
-    CASE BottomRB
+        'CASE BottomRB
 
-    CASE RightRB
+        'CASE RightRB
 
-    CASE LeftRB
+        'CASE LeftRB
 
-    CASE EnterBT
+        'CASE EnterBT
 
-    CASE LoadBT
+        'CASE LoadBT
 
-    CASE SaveBT
+        'CASE SaveBT
 
-    CASE LabelTT
+        'CASE LabelTT
 
-    CASE ZoomBar
+        'CASE ZoomBar
+
+    CASE ELSE
+        __prevent_click = False
+
+        'SELECT CASE __UI_BelowHoveringID
+        '    CASE controlrange.min TO controlrange.max
+        '        diag_call_reg "fc"
+        '        'frame name is set when displayed , but what if
+        '        local_a = (VirtualOffset.a - 1 + roomboxsize.a * (VirtualOffset.z - 1) + __UI_BelowHoveringID - controlrange.min)
+        '        lib_rooms_main(local_a).rmdesc = 1 'app.brush
+        '        ' PaintYou FindKid(id), lib_rooms_main(local_a).rmdesc
+        '        MapResource rooms(local_a).rmdesc, FindKid(id)
+        '        'BUT, will not work, save when a contiguous range is available
+        '        '   v  & &
+
+        'END SELECT
 
 END SELECT
-'diag
-'IF __cross_dispatch_top THEN __cross_dispatch_top = False: EXIT SUB
+AreaCursor.dragcontext = 0: AreaCursor.dragstart = -1
+SpecialMouseUp:
 
-IF __UI_MouseTop <= Control(Area).Top + Control(Area).Height THEN
-    IF __UI_MouseTop >= Control(Area).Top AND __UI_MouseLeft <= Control(Area).Left + Control(Area).Width AND __UI_MouseLeft >= Control(Area).Left THEN
-        area_handler:
-        SHARED fSingle_area_click_done AS _BYTE
-        IF NOT fSingle_area_click_done THEN 'ensure only one of these just in case
-            '  DIM pp AS intpair, pq AS intpair
-            ''pp.a = __UI_MouseLeft - Control(Feel).Left: pp.z = __UI_MouseTop - Control(Feel).Top
-            pp.a = __UI_MouseLeft: pp.z = __UI_MouseTop
-            ' Pull out and activate tile Frame if one has been clicked
-            pq.a = pp.a + 1: pq.z = pp.z + 1
-            '  CALL SweepControls(pp, pq)
+'check that both id and AreaCursor.dragcontext are valid tiles
+'
 
-            FOR g = 1 TO UBOUND(my.sweeplist)
-                '            FOR g = 1 TO UBOUND(uix_sweeplist)
-                '                AreaClick uix_sweeplist(g)
-                AreaClick My.sweeplist(g)
-            NEXT g
-            REDIM uix_sweeplist(0) AS LONG
-            fSingle_area_click_done = True
-        END IF
-    END IF
-ELSE
-
-END IF
+AreaCursor.dragcontext = 0: AreaCursor.dragstart = -1
 
 END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
 SELECT CASE __UI_BelowHoveringID
-    CASE controlrange.min TO controlrange.max
-        '   Control(Cursor).Left = Control(__UI_BelowHoveringID).Left - 6
-        '   Control(Cursor).Top = Control(__UI_BelowHoveringID).Top - 6
+    'CASE controlrange.min TO controlrange.max
+    '    '   Control(Cursor).Left = Control(__UI_BelowHoveringID).Left - 6
+    '    '   Control(Cursor).Top = Control(__UI_BelowHoveringID).Top - 6
 
-        ' DIM this AS __UI_ControlTYPE
+    '    ' DIM this AS __UI_ControlTYPE
 
-        STATIC this_stat
-        IF this_stat = 0 THEN this_stat = _NEWIMAGE(80, 60, 32)
-        _DEST this_stat
-        'CLS , 0
-        LINE (this.Width * .2, this.Height \ 2)-STEP(this.Width * .6, 0), &HFFFF3F3F
-        CIRCLE STEP(4, 0), 5, &HFFFF3F3F: CIRCLE STEP(-8 - this.Width * .6, 0), 5, &HFFFF3F3F
-        LINE (this.Width \ 2, this.Height * .2)-STEP(0, this.Height * .6), &HFFFF3F3F
-        CIRCLE STEP(0, 4), 5, &HFFFF3F3F: CIRCLE STEP(0, -8 - this.Height * .6), 5, &HFFFF3F3F
-        DIM cann(80 * 60 + 9) AS LONG
-        GET (0, 0)-(79, 59), cann()
-        _DEST 0
-        BeginDraw Cursor
-        PUT (Control(__UI_BelowHoveringID).Left - Control(controlrange.min).Left, Control(__UI_BelowHoveringID).Top - Control(controlrange.min).Top), cann(), _CLIP XOR
-        EndDraw Cursor
+    '    'paint the cursor element
+    '    STATIC this_stat
+    '    IF this_stat = 0 THEN this_stat = _NEWIMAGE(80, 60, 32)
+    '    _DEST this_stat
+    '    'CLS , 0
+    '    LINE (this.Width * .2, this.Height \ 2)-STEP(this.Width * .6, 0), &HFFFF3F3F
+    '    CIRCLE STEP(4, 0), 5, &HFFFF3F3F: CIRCLE STEP(-8 - this.Width * .6, 0), 5, &HFFFF3F3F
+    '    LINE (this.Width \ 2, this.Height * .2)-STEP(0, this.Height * .6), &HFFFF3F3F
+    '    CIRCLE STEP(0, 4), 5, &HFFFF3F3F: CIRCLE STEP(0, -8 - this.Height * .6), 5, &HFFFF3F3F
+    '    DIM cann(80 * 60 + 9) AS LONG
+    '    GET (0, 0)-(79, 59), cann()
+    '    _DEST 0
+    '    BeginDraw Cursor
+    '    PUT (Control(__UI_BelowHoveringID).Left - Control(controlrange.min).Left, Control(__UI_BelowHoveringID).Top - Control(controlrange.min).Top), cann(), _CLIP XOR
+    '    EndDraw Cursor
 
 
 END SELECT
@@ -790,10 +735,11 @@ SHARED DoMoveCursor: DoMoveCursor = True
 FOR i = 1 TO UBOUND(my.sweeplist)
     IF Control(My.sweeplist(i)).Type = __UI_Type_Frame THEN cin = My.sweeplist(i)
 NEXT i
-
 AreaCursor.dragcontext = cin
 AreaCursor.dragstart = NextTime(drag_thresh)
-appctl.dclickstart = NextTime(dblclick_thresh)
+'appctl.dclickstart = NextTime(dblclick_thresh) < should be on m-up
+
+''''    AreaCursor.dragcontext = (FindKid(__UI_BelowHoveringID))
 '        AreaCursor.dragcontext = id 'sellyID
 '        AreaCursor.dragcontext = Control(FindKid(__UI_BelowHoveringID)).ParentID
 
@@ -853,97 +799,77 @@ SELECT CASE id
     CASE ZoomBar
 END SELECT
 
-'''''u partial condit'n
-''''IF __UI_MouseTop < Control(Area).Height AND __UI_MouseLeft < Control(Area).Left + Control(Area).Width THEN
-''''    AreaCursor.dragcontext = (FindKid(__UI_BelowHoveringID))
-''''    IF Control(AreaCursor.dragcontext).Type <> __UI_Type_Frame THEN AreaCursor.dragcontext = Control(AreaCursor.dragcontext).ParentID
-''''    AreaCursor.dragstart = NextTime(drag_thresh)
-
-''''END IF
 
 END SUB
 
 SUB __UI_Click (id AS LONG)
 
-'only doing this ?: ---------
-
-SHARED __drag_complete AS _BYTE
-IF __drag_complete THEN __drag_complete = False: EXIT SUB 'don't mishandle a dragdrop
-
-
 SELECT CASE id
-    CASE MazeBuilder
 
-    CASE Button1, Button2, Button3, Button4, Button5, Button6,_
-        Button7, Button8, Button9, Button10, Button11, Button12
-
-    CASE Area
-
-    CASE ApplyBT
-
-    CASE Button13
-
-    CASE Button14
-
-    CASE TextTT
-
-    CASE Button15
-
-    CASE Button16
-
-    CASE Button17
-
-    CASE ZoomBar
-
-    CASE Frame1
-
-    CASE Frame
-
-    CASE Frame3
-
-    CASE Ccursor
-
-    CASE ExpandBT
-
-    CASE expandLB
-
-    CASE TopRB
-
-    CASE BottomRB
-
-    CASE RightRB
-
-    CASE LeftRB
-
-    CASE EnterBT
-
-    CASE LoadBT
-
-    CASE SaveBT
-
-    CASE LabelTT
-
-    CASE ZoomBar
-
-    CASE controlrange.min TO controlrange.max
-
-        '?>        Control(Scrolltrial).Value = 1 + id - controlrange.min
-
-
+    CASE Brush1, Brush2, Brush3, Brush4, Brush5,  Brush6,_
+        Brush7, Brush8, Brush9, Brush10, Brush11, Brush12
+        app.brush = id + 1 - Brush1
+        Control(Ccursor).Left = Control(id).Left - 9
+        Control(Ccursor).Top = Control(id).Top - 8
 END SELECT
 
-'xxxx AreaCursor.dragon = False: AreaCursor.dragstart = -1
+
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
 
+asc_rng$ = CHR$(lesser(255, greater(1, 0 - __UI_KeyHit)))
+
+do_once:
+SHARED __cross_dispatch_top
+__cross_dispatch_top = True ' about to fire an event sub, make it known its an artificial call
+asc_rng$ = CHR$(lesser(255, greater(1, 0 - __UI_KeyHit)))
+'    asc_rng$ = CHR$(lesser(255, greater(1, 0 - __UI_KeyHit)))
+
+'diag
+KeyF1 = 15104: KeyF2 = 15360: KeyF3 = 15616: KeyF4 = 15872: KeyF5 = 16128: KeyF6 = 16384: KeyF7 = 16640: KeyF8 = 16896
+
+
+SELECT CASE LCASE$(asc_rng$)
+
+    '!! simple, change click to __UI_MouseUp
+    CASE "b": app.brush = Chamb
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "c": app.brush = Cave
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "n", "o": app.brush = MajorTreasure
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "m": app.brush = miNorTreasure
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "k": app.brush = Market
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "h": app.brush = Fount
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "i": app.brush = Relic
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "l", "v": app.brush = Entry
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "y": app.brush = Shrine
+        __UI_Click Control(Brush1).ID + app.brush - 1
+
+    CASE "10": ' app.brush =
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "11", "v": ' app.brush =
+        __UI_Click Control(Brush1).ID + app.brush - 1
+    CASE "13": 'app.brush =
+        __UI_Click Control(Brush1).ID + app.brush - 1
+
+    CASE ELSE: __cross_dispatch_top = False
+END SELECT
+
 SELECT CASE id
     CASE MazeBuilder
+
+    CASE Area
 
     CASE Brush1, Brush2, Brush3, Brush4, Brush5,  Brush6,_
         Brush7, Brush8, Brush9, Brush10, Brush11, Brush12
 
-    CASE Area
 
     CASE ApplyBT
 
@@ -994,114 +920,134 @@ SELECT CASE id
     CASE controlrange.min TO controlrange.max
 END SELECT
 
-'SUB __UI_KeyPress (id AS LONG)
-SHARED __cross_dispatch_top
-__cross_dispatch_top = True ' about to fire an event sub, make it known its an artificial call
+END SUB
+SUB UI_or_KeyPress (id_list() AS LONG)
+iub = UBOUND(id_list)
+IF iub < 1 THEN GOTO do_once 'id stays 0
+FOR m = 1 TO iub: id = id_list(m)
 
-asc_rng$ = CHR$(lesser(255, greater(1, 0 - __UI_KeyHit)))
-SELECT CASE LCASE$(asc_rng$)
-    '!! simple, change click to __UI_MouseUp
-    CASE "b": app.brush = Chamb
-        __UI_MouseUp Control(Brush1).ID + app.brush - 1
-    CASE "c": app.brush = Cave
-        __UI_MouseUp Control(Brush1).ID + app.brush - 1
-    CASE "n", "o": app.brush = MajorTreasure
-        __UI_MouseUp Control(Brush1).ID + app.brush - 1
-    CASE "m": app.brush = miNorTreasure
-        __UI_MouseUp Control(Brush1).ID + app.brush - 1
-    CASE "k": app.brush = Market
-        __UI_MouseUp Control(Brush1).ID + app.brush - 1
-    CASE "h": app.brush = Fount
-        __UI_MouseUp Control(Brush1).ID + app.brush - 1
-    CASE "i": app.brush = Relic
-        __UI_MouseUp Control(Brush1).ID + app.brush - 1
-    CASE "l", "v": app.brush = Entry
-        __UI_MouseUp Control(Brush1).ID + app.brush - 1
-    CASE "y": app.brush = Shrine
-        __UI_MouseUp Control(Brush1).ID + app.brush - 1
-    CASE ELSE: __cross_dispatch_top = False
-END SELECT
+    do_once:
+    SHARED __cross_dispatch_top
+    __cross_dispatch_top = True ' about to fire an event sub, make it known its an artificial call
+    asc_rng$ = CHR$(lesser(255, greater(1, 0 - __UI_KeyHit)))
+    '    asc_rng$ = CHR$(lesser(255, greater(1, 0 - __UI_KeyHit)))
 
+    'diag
+    KeyF1 = 15104: KeyF2 = 15360: KeyF3 = 15616: KeyF4 = 15872: KeyF5 = 16128: KeyF6 = 16384: KeyF7 = 16640: KeyF8 = 16896
+    IF ABS(__UI_KeyHit) = KeyF1 THEN __UI_ForceRedraw = True
 
-'undo-able follows
+    SELECT CASE LCASE$(asc_rng$)
+
+        '!! simple, change click to __UI_MouseUp
+        CASE "b": app.brush = Chamb
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "c": app.brush = Cave
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "n", "o": app.brush = MajorTreasure
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "m": app.brush = miNorTreasure
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "k": app.brush = Market
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "h": app.brush = Fount
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "i": app.brush = Relic
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "l", "v": app.brush = Entry
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "y": app.brush = Shrine
+            __UI_Click Control(Brush1).ID + app.brush - 1
+
+        CASE "10": ' app.brush =
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "11", "v": ' app.brush =
+            __UI_Click Control(Brush1).ID + app.brush - 1
+        CASE "13": 'app.brush =
+            __UI_Click Control(Brush1).ID + app.brush - 1
+
+        CASE ELSE: __cross_dispatch_top = False
+    END SELECT
+
+    'undo-able follows
 if  __UI_mousetop > Control(area).top AND __UI_mousetop <=  Control(Area).top + Control(area).Height and _
  __UI_mouseleft > Control(area).Left AND __UI_mouseleft <= Control(Area).Left + Control(Area).Width  then
-    IF LCASE$(asc_rng$) = "r" THEN
+        IF LCASE$(asc_rng$) = "r" THEN
 
-        'doing add single row
-        'need the frameid - of the
-        aid = Control(SellyID).ID
+            'doing add single row
+            'need the frameid - of the
+            aid = Control(SellyID).ID
 
-        DIM pp AS intpair, pq AS intpair
-        pp.a = Control(Area).Left: pp.z = __UI_MouseTop: pq.a = __UI_MouseLeft: pq.z = __UI_MouseTop
-        aid = ScanControls(pp, pq, __UI_Type_Frame, 1)
-
-
-        '  areadim.z is not affected
-        ''  downdist = Control(aid).Height
-        ''  updist = Control(controlrange.max).Top - Control(aid).Top
-        FOR i = controlrange.max TO aid STEP -1
-            ''            Control(i).Top = Control(i).Top + downdist
-            IF i + areadim.a > controlrange.max THEN
-                '' __UI_DestroyControl Control(FindKid&(i))
-                WipeTile FindKid&(i): Control(FindKid&(i)).Name = "-A" + STRING$(i, "a")
-
-            ELSE
-                ChangeParent FindKid&(i), i + areadim.a
-                'now reflect the change in parent name
-                Control(i + areadim.a).Name = Control(i).Name
-
-            END IF
-        NEXT i
-        'FOR i = controlrange.max - areadim.a + 1 TO controlrange.max
-        '    Control(i).Top = Control(i).Top - updist
-        'NEXT i
-
-        REDIM _PRESERVE rooms(UBOUND(rooms) + roomboxsize.a) AS room, visualfacts(UBOUND(visualfacts) + roomboxsize.a) AS roomsup
-        REDIM _PRESERVE paths(LBOUND(paths) + roomboxsize.a TO UBOUND(paths) + roomboxsize.a) AS room
-        DIM dummy1 AS roomsup, dummy AS room
-        FOR i = UBOUND(visualfacts) TO UBOUND(rooms) STEP -1 ' visualfacts has different bounds, start adjusting these
-            visualfacts(i) = visualfacts(i - roomboxsize.a)
-        NEXT i
-        FOR i = i TO i - roomboxsize.a STEP -1: visualfacts(i) = dummy1: NEXT i
-        '  DIM found_z AS intpair: Trans bid, found_z  :bid=0
-        'try:
-        found_z.z = ot + aid \ greater(1, areadim.a)
-        '''=roomboxsize.a  (ot-1)
-
-        '   bid = VAL(RIGHT$(Control(aid).Name, LEN(Control(aid).Name) - 2)) 'for __UI_Type_Frame
+            DIM pp AS intpair, pq AS intpair
+            pp.a = Control(Area).Left: pp.z = __UI_MouseTop: pq.a = __UI_MouseLeft: pq.z = __UI_MouseTop
+            aid = ScanControls(pp, pq, __UI_Type_Frame, 1)
 
 
+            '  areadim.z is not affected
+            ''  downdist = Control(aid).Height
+            ''  updist = Control(controlrange.max).Top - Control(aid).Top
+            FOR i = controlrange.max TO aid STEP -1
+                ''            Control(i).Top = Control(i).Top + downdist
+                IF i + areadim.a > controlrange.max THEN
+                    '' __UI_DestroyControl Control(FindKid&(i))
+                    WipeTile FindKid&(i): Control(FindKid&(i)).Name = "-A" + STRING$(i, "a")
 
-        ireach = 1 + roomboxsize.a * found_z.z
-        FOR i = roomboxsize.a * roomboxsize.z TO ireach - roomboxsize.a STEP -1 'iterate the moved portion of rooms() resource!
-            IF i < ireach THEN
-                IF rooms(i).isof <> 0 THEN
-                    IF rooms(i).isof < i THEN
-                        'do nothing, move nothing
+                ELSE
+                    ChangeParent FindKid&(i), i + areadim.a
+                    'now reflect the change in parent name
+                    Control(i + areadim.a).Name = Control(i).Name
 
-                END IF: END IF
+                END IF
+            NEXT i
+            'FOR i = controlrange.max - areadim.a + 1 TO controlrange.max
+            '    Control(i).Top = Control(i).Top - updist
+            'NEXT i
 
-                IF found_z.z > 1 THEN IF rooms(i - roomboxsize.a).isof <> 0 THEN IF rooms(i - roomboxsize.a).isof = i THEN rooms(i + roomboxsize.a) = rooms(i): rooms(i) = dummy:: visualfacts(i + roomboxsize.a) = visualfacts(i): visualfacts(i) = dummy1:: SWAP rooms(i - roomboxsize.a), rooms(i): SWAP visualfacts(i - roomboxsize.a), visualfacts(i): descended = True
-                'if descended "-A"
-            ELSE
-                'generally'
-                rooms(i + roomboxsize.a) = rooms(i)
-                visualfacts(i + roomboxsize.a) = visualfacts(i)
-                '': visualfacts(i) = dummy1::SWAP rooms(i - roomboxsize.a), rooms(i): SWAP visualfacts(i - roomboxsize.a), visualfacts(i)
+            REDIM _PRESERVE rooms(UBOUND(rooms) + roomboxsize.a) AS room, visualfacts(UBOUND(visualfacts) + roomboxsize.a) AS roomsup
+            REDIM _PRESERVE paths(LBOUND(paths) + roomboxsize.a TO UBOUND(paths) + roomboxsize.a) AS room
+            DIM dummy1 AS roomsup, dummy AS room
+            FOR i = UBOUND(visualfacts) TO UBOUND(rooms) STEP -1 ' visualfacts has different bounds, start adjusting these
+                visualfacts(i) = visualfacts(i - roomboxsize.a)
+            NEXT i
+            FOR i = i TO i - roomboxsize.a STEP -1: visualfacts(i) = dummy1: NEXT i
+            '  DIM found_z AS intpair: Trans bid, found_z  :bid=0
+            'try:
+            found_z.z = ot + aid \ greater(1, areadim.a)
+            '''=roomboxsize.a  (ot-1)
+
+            '   bid = VAL(RIGHT$(Control(aid).Name, LEN(Control(aid).Name) - 2)) 'for __UI_Type_Frame
 
 
-            END IF 'don't forget to mirror with roomsup
 
-        NEXT i
-        roomboxsize.z = roomboxsize.z + 1
+            ireach = 1 + roomboxsize.a * found_z.z
+            FOR i = roomboxsize.a * roomboxsize.z TO ireach - roomboxsize.a STEP -1 'iterate the moved portion of rooms() resource!
+                IF i < ireach THEN
+                    IF rooms(i).isof <> 0 THEN
+                        IF rooms(i).isof < i THEN
+                            'do nothing, move nothing
 
-        ' also grab new lib
-    END IF '~
-    IF LCASE$(asc_rng$) = "t" THEN
-        'also grab new lib
+                    END IF: END IF
+
+                    IF found_z.z > 1 THEN IF rooms(i - roomboxsize.a).isof <> 0 THEN IF rooms(i - roomboxsize.a).isof = i THEN rooms(i + roomboxsize.a) = rooms(i): rooms(i) = dummy:: visualfacts(i + roomboxsize.a) = visualfacts(i): visualfacts(i) = dummy1:: SWAP rooms(i - roomboxsize.a), rooms(i): SWAP visualfacts(i - roomboxsize.a), visualfacts(i): descended = True
+                    'if descended "-A"
+                ELSE
+                    'generally'
+                    rooms(i + roomboxsize.a) = rooms(i)
+                    visualfacts(i + roomboxsize.a) = visualfacts(i)
+                    '': visualfacts(i) = dummy1::SWAP rooms(i - roomboxsize.a), rooms(i): SWAP visualfacts(i - roomboxsize.a), visualfacts(i)
+
+
+                END IF 'don't forget to mirror with roomsup
+
+            NEXT i
+            roomboxsize.z = roomboxsize.z + 1
+
+            ' also grab new lib
+        END IF '~
+        IF LCASE$(asc_rng$) = "t" THEN
+            'also grab new lib
+        END IF
     END IF
-END IF
+NEXT m
 
 END SUB
 
@@ -1159,9 +1105,9 @@ DIM i AS LONG, j AS _INTEGER64, k AS _INTEGER64, m AS _INTEGER64, n AS _INTEGER6
 unfiltered = __uix_unfiltered
 
 ub = UBOUND(Control): helperindex = lesser(ub, helperindex)
-
-FOR si = greater(1, helperindex) TO UBOUND(Control) + helperindex
-    IF 0 < helperindex THEN i = greater(1, si MOD ub) ELSE i = si
+st_pt = 1 'use? 101
+FOR si = greater(st_pt, helperindex) TO UBOUND(Control) + helperindex
+    IF 0 < helperindex THEN i = greater(st_pt, si MOD ub) ELSE i = si
     IF Control(i).Type = c_type THEN
         fusilli:
         '         dealing with top right and bottom left corners
@@ -1245,16 +1191,17 @@ SUB SweepControls (from AS intpair, too AS intpair)
 
 'can be part of the effort to create an easy way to establish tab order
 'NI: optionally change names ;* remember to scan for children controls and duplicate change
-
 STATIC def__ar AS _BYTE, collection() AS LONG
 IF NOT def__ar THEN DIM collection(0) AS LONG: def__ar = -1
+SHARED ctrllistst
+ctrllistst = 101 'control.list.start = 101
 REDIM _PRESERVE collection(UBOUND(collection) + 1) AS LONG
 
 '?
 IF fout THEN fi& = 0 ' does this prevent oor errors on uix_sweeplist ?
 '?
 
-FOR i% = 1 TO UBOUND(control)
+FOR i% = ctrllistst TO UBOUND(control)
     ' 'SetCaption (Brush10), STR$(UBOUND(control))
 
     ' 'SetCaption (Brush11), STR$(ScanControls(from, too, __uix_unfiltered, 22))
@@ -1302,14 +1249,26 @@ END SUB
 FUNCTION Feel&: Feel& = __UI_HoveringID
 END FUNCTION
 
-FUNCTION Zupreme& (This AS LONG)
+
+FUNCTION SellyID&
+sellyIDh = (Feel)
+'FOR x = 1 TO 3 ' dig
+'    IF Control(sellyIDh).Type = __UI_Type_Frame THEN EXIT FOR
+'    sellyIDh = Control(sellyIDh).ParentID
+'NEXT
+'IF sellyIDh < controlrange.min OR sellyIDh > controlrange.max THEN EXIT FUNCTION
+'SellyID& = sellyIDh
+''BTW: if the name is set when tile is loaded in, this gives the right ##s of the maze index
+''    = VAL(RIGHT$(Control(sellyID).Name, LEN(Control(sellyID).Name) - 2)) for __UI_Type_Frame
+END FUNCTION
+
+
+FUNCTION Failed1Zupreme& (This AS LONG)
 'a typical call would look like this: Button32=Zupreme(Button32)
 DIM i AS LONG, ub AS LONG, dummy AS __UI_ControlTYPE, str_dummy(1 TO 8) AS STRING
 
 FOR i = 1 TO UBOUND(Control)
-    'this works badly, do not know why...
-    ' IF Control(i).ID <> 0 THEN ub = i: IF This > ub THEN This = 0: EXIT FUNCTION ELSE EXIT FOR
-    '   . . .but this
+    'except this seems wrong...
     IF Control(i).ID <> 0 THEN ub = i: IF This > ub THEN Zupreme& = This: EXIT FUNCTION ELSE EXIT FOR
 NEXT i
 Zupreme& = ub
@@ -1327,7 +1286,7 @@ FOR i = 1 TO UBOUND(control)
     pi = Control(i).ParentID
     IF pi = This THEN Control(i).ParentID = ub
     IF pi > This THEN IF pi <= ub THEN Control(i).ParentID = pi - 1
-NEXT i&
+NEXT i
 ' Zupreme& = 'see above
 END SUB
 
@@ -1338,6 +1297,129 @@ FOR i& = __of& TO UBOUND(control)
     IF Control(i&).ParentID = __of& THEN FindKid& = i&: EXIT FOR
 NEXT i&
 END FUNCTION
+
+SUB LoadProj (inst AS INTEGER)
+'  ()  ()  ()  ()  initialization of the view takes place here
+
+CONST Init_ViewW = 11
+CONST Init_ViewH = 9
+
+
+
+IF inst = 2 THEN GOTO load_existing:
+
+load_blank:
+
+areadim.a = Init_ViewW: areadim.z = Init_ViewH
+
+'!examp
+roomboxsize.a = areadim.a: roomboxsize.z = areadim.z:
+
+'virtual components
+REDIM rooms(roomboxsize.a * roomboxsize.z) AS room
+REDIM visualfacts(areadim.a * areadim.z) AS roomsup
+
+ADvalidate
+
+'cleanup (as needed)
+FOR ix = 1 TO UBOUND(areaarr, 1)
+    FOR iy = 1 TO UBOUND(areaarr, 2)
+        px = AreaArr(ix, iy)
+        IF px THEN
+            noti = FindKid(px): IF noti > 0 THEN __UI_DestroyControl Control(noti)
+            __UI_DestroyControl Control(px) ' mean for the control to have contiguous indices
+        END IF
+NEXT: NEXT
+ERASE AreaArr: REDIM AreaArr(areadim.a, areadim.z) AS LONG
+
+'diag
+rooms(1).rmdesc = Chamb: rooms(2 + areadim.z).rmdesc = Chamb
+
+'AreaArr(ix, iy)
+' offset a buncha new widgets from the picturebox's vertex
+box = Control(Area).Left: boy = Control(Area).Top
+SHARED prefix1$2, prefix2$2: prefix1$2 = "^A": prefix2$2 = "AA"
+FOR ix = 1 TO areadim.a ' UBOUND(areaarr, 1)
+    FOR iy = 1 TO areadim.z ' UBOUND(areaarr, 2)
+        ic& = ic& + 1
+        '  AreaArr(ix, iy) = __UI_NewControl(__UI_Type_PictureBox, "AA" + LTRIM$(STR$(ic&)), zoom.width, zoom.height, (ix - 1) * zoom.width, (iy - 1) * zoom.height, Area)
+        '  AreaArr(ix, iy) = __UI_NewControl(__UI_Type_Frame, "^A" + LTRIM$(STR$(ic&)), zoom.width, zoom.height, box + (ix - 1) * zoom.width, boy + (iy - 1) * zoom.height, 0)
+        'at unscaled size here
+        SHARED zoom.crit
+
+        ' diag
+        IF (ix - 1) * app.roomwidth * zoom.width = 0 THEN app.roomwidth = 80: zoom.crit = True: app.roomheight = 53:
+
+
+        AreaArr(ix, iy) = __UI_NewControl(__UI_Type_Frame, prefix1$2 + LTRIM$(STR$(ic&))_
+            , app.roomwidth* zoom.width - 1, app.roomheight* zoom.height-1,_
+            box + (ix - 1) * app.roomwidth * zoom.width, boy + (iy - 1) * app.roomheight * zoom.height, 0)
+        Control(AreaArr(ix, iy)).HasBorder = False
+        Control(AreaArr(ix, iy)).BackColor = Control(AreaArr(ix, iy)).BackColor AND &H00FFFFFF
+        'u' set em clear
+NEXT: NEXT: ic& = 0
+controlrange.min = AreaArr(1, 1): controlrange.max = AreaArr(areadim.a, areadim.z)
+'now same
+FOR ix = 1 TO UBOUND(areaarr, 1)
+    FOR iy = 1 TO UBOUND(areaarr, 2)
+        ic& = ic& + 1
+        'u'  nameless = __UI_NewControl(__UI_Type_PictureBox, "AA" + LTRIM$(STR$(ic&)), zoom.width, zoom.height, 1, 1, AreaArr(ix, iy))
+        '?"        nameless = __UI_NewControl(__UI_Type_PictureBox, prefix2$2 + LTRIM$(STR$(ic&)), app.roomwidth, app.roomheight, 1, 1, AreaArr(ix, iy))
+        'is !THIS why?         nameless = __UI_NewControl(__UI_Type_PictureBox, prefix2$2 + LTRIM$(STR$(ic&)), app.roomwidth, app.roomheight, 1, 1, AreaArr(ix, iy))
+        nameless = __UI_NewControl(__UI_Type_PictureBox, prefix2$2 + LTRIM$(STR$(ic&)), app.roomwidth, app.roomheight, 0, 0, AreaArr(ix, iy))
+
+
+        IF Control(AreaArr(ix, iy)).Value < 1 THEN Control(AreaArr(ix, iy)).Value = 1
+
+        'u' Control(AreaArr(ix, iy)).Hidden = True
+        IF ix MOD 2 THEN 'ix <= 2 AND iy <= 3 THEN
+            ''''  MapResource 0, AreaArr(ix, iy)
+            ''LoadImage Control(nameless), "res_mb/blnk.room.jpg"
+
+            '  assumes a 1,1 view offset rooms((-1 + iy) * roomboxsize.a + ix
+            'or
+            '  local_a =  roomboxsize.a * (VirtualOffset.z - 1) + VirtualOffset.a - 1 + id - controlrange.min
+
+
+            spotchange FindKid(AreaArr(ix, iy)), rooms((-1 + iy) * roomboxsize.a + ix).rmdesc
+
+            PaintYou FindKid(AreaArr(ix, iy)), rooms((-1 + iy) * roomboxsize.a + ix).rmdesc
+        ELSE
+            'don't it work?
+            ' MapResource 0, nameless
+            '  MapResource 0, FindKid(AreaArr(ix, iy))
+            PaintYou FindKid(AreaArr(ix, iy)), rooms((-1 + iy) * roomboxsize.a + ix).rmdesc
+
+        END IF
+
+        ''LoadImage Control(nameless), "res_mb/blnk.room.jpg" '/reshandles(res_room )
+NEXT: NEXT
+
+
+
+VirtualOffset.a = 1: VirtualOffset.z = 1
+
+'Cursor = Zupreme(Cursor)
+
+
+
+GOTO sub_end
+'-
+load_existing:
+
+sub_end:
+
+END SUB
+
+SUB prim_expand
+roomboxsize.a = roomboxsize.a + areadim.a
+roomboxsize.z = roomboxsize.z
+
+'virtual components
+REDIM _PRESERVE rooms(roomboxsize.a * roomboxsize.z) AS room
+REDIM _PRESERVE visualfacts(areadim.a * areadim.z) AS roomsup
+
+END SUB
 
 SUB ReadFile (spec$)
 spec$ = "default"
@@ -1516,22 +1598,21 @@ END FUNCTION
 
 SUB LoadResources
 
-'primitive
+path$ = "res_mb\"
+'CONST None = 0, Chamb = 1       , Cave = 2,         Fount = 3,     Shrine = 4,         Market = 5,Relic = 6 MajorTreasure = 7, miNorTreasure = 8, Entry = 9
+DATA "blnk.room.jpg","std.room.jpg","room.cave.jpg","room.fount.jpg","room.shrine.jpg","","","room.bigt.jpg","room.lilt.jpg","room.entr.jpg","ENDRES"
+'CONST Tunnel = 20, Slide = 30, Slowing = 40, Guarded = 50
 
-IF _FILEEXISTS("res_mb\blnk.room.jpg ") THEN
-    FoundRes$(0) = "res_mb\blnk.room.jpg"
-    IF happres(0) >= -1 THEN happres(0) = _LOADIMAGE(FoundRes$(0), 32)
-END IF
-IF _FILEEXISTS("res_mb\std.room.jpg") THEN
-    FoundRes$(res_room) = "res_mb\std.room.jpg"
-    IF happres(res_room) >= -1 THEN happres(res_room) = _LOADIMAGE(FoundRes$(res_room), 32)
-END IF
-load_fail = 2
-IF _FILEEXISTS("res_mb\room.shrine.jpg") THEN
-    FoundRes$(res_shrine) = "res_mb\room.shrine.jpg"
-    IF happres(res_shrine) >= -1 THEN happres(res_shrine) = _LOADIMAGE(FoundRes$(res_shrine), 32): load_fail = False
-    IF load_fail THEN n$ = ErrorCage("load_fail at " + STR$(load_fail))
-END IF
+DO: i& = i& + 1
+    READ FoundRes$(i&): FoundRes$(i&) = path$ + FoundRes$(i&)
+    IF _FILEEXISTS(FoundRes$(i&)) THEN
+        IF happres(i& - 1) >= -1 THEN happres(i& - 1) = _LOADIMAGE(FoundRes$(i&), 32) ELSE load_fail = i
+    ELSE
+        load_fail = i
+    END IF
+LOOP UNTIL INSTR(FoundRes$(i), "ENDRES") OR i& = 5
+
+IF load_fail THEN n$ = ErrorCage("last load_fail at " + STR$(load_fail))
 
 END SUB
 
@@ -1757,7 +1838,7 @@ END IF
 '  controlrange.min = AreaArr(1, 1): controlrange.max = AreaArr(areadim.a, areadim.z)
 ' adjust VirtualOffset .a.z
 diag_call_reg_2 "adjs]"
-Cursor = Zupreme(Cursor)
+'Cursor = Zupreme(Cursor)
 adjust_scroll%% = True
 
 END SUB
@@ -1784,6 +1865,51 @@ FUNCTION LocTrans& (id)
 LocTrans = roomboxsize.a * (VirtualOffset.z - 1) + VirtualOffset.a - 1 + id - controlrange.min
 END SUB
 
+FUNCTION FailedZupreme& (This AS LONG)
+
+'/Dyn1 = __UI_NewControl(__UI_Type_TextBox, "Dyn1", 100, 40, 32, 32, 0)
+'/Control(Dyn1).Font = SetFont("segoeui.ttf", 14, "")
+'/Dyn2 = __UI_NewControl(__UI_Type_PictureBox, "Dyn2", _WIDTH - 32, _HEIGHT - 32, 16, 16, 0)
+
+
+'/Dyn1 = Zupreme&(Dyn1) ' ---> works
+'/
+'/ListBox1 = Zupreme&(ListBox1)
+'/TrackBar1 = Zupreme&(TrackBar1)
+
+'/ListBox1 = Zupreme&(ListBox1)
+'/TrackBar1 = Zupreme&(TrackBar1)
+'/Dyn1 = Zupreme&(Dyn1) ' ---> does NOT work to put the dynamic text box above the dynamic pic box
+
+
+
+'a typical call would look like this: Button32=Zupreme(Button32)
+startpoint = 101 ' the lowest control in the array
+DIM i AS LONG, ub AS LONG, dummy AS __UI_ControlTYPE, str_dummy(1 TO 8) AS STRING
+
+FOR i = UBOUND(Control) TO startpoint STEP -1
+    IF Control(i).ID <> 0 THEN ub = i: IF This >= ub THEN Zupreme& = This: EXIT FUNCTION ELSE EXIT FOR
+NEXT i
+Zupreme& = ub
+IF ub - This > 200 THEN: ' n$ = ErrorCage("awkwardly large z-upreming") 'optionally so
+dummy = Control(This)
+str_dummy(1) = Caption(This): str_dummy(2) = ToolTip(This): str_dummy(3) = Text(This): str_dummy(4) = Mask(This): str_dummy(5) = __UI_TempTexts(This): str_dummy(6) = __UI_TempCaptions(This): str_dummy(7) = __UI_TempTips(This): str_dummy(8) = __UI_TempMask(This)
+FOR i = This TO ub - 1
+    Control(i) = Control(i + 1): Caption(i) = Caption(i + 1): ToolTip(i) = ToolTip(i + 1): Text(i) = Text(i + 1): Mask(i) = Mask(i + 1)
+    Control(i).ID = i: __UI_TempTexts(i) = __UI_TempTexts(i + 1): __UI_TempCaptions(i) = __UI_TempCaptions(i + 1): __UI_TempTips(i) = __UI_TempTips(i + 1): __UI_TempMask(i) = __UI_TempMask(i + 1)
+NEXT i
+Control(ub) = dummy: Control(ub).ID = ub
+Caption(ub) = str_dummy(1): ToolTip(ub) = str_dummy(2): Text(ub) = str_dummy(3): Mask(ub) = str_dummy(4): __UI_TempTexts(ub) = str_dummy(5): __UI_TempCaptions(ub) = str_dummy(6): __UI_TempTips(ub) = str_dummy(7): __UI_TempMask(ub) = str_dummy(8)
+
+FOR i = 1 TO UBOUND(control)
+    pi = Control(i).ParentID
+    IF pi = This THEN Control(i).ParentID = ub
+    IF pi > This THEN IF pi <= ub THEN Control(i).ParentID = pi - 1
+NEXT i
+' Zupreme& = 'see above
+END SUB
+
+
 
 FUNCTION NextTime! (timedelta AS SINGLE)
 nt! = (TIMER(.001) + timedelta) - (nt! \ 86400) * 86400 'just prevent out of bounds values when comparing TIMER output
@@ -1794,6 +1920,15 @@ END FUNCTION
 
 SUB ADvalidate
 'make sure controls don't over-flow the reg
+'! app.roomwidth * zoom.width
+'                    as in
+'''areadim.a = lesser(areadim.a, Control(Area).Width / app.roomwidth / zoom.width / areadim.a)
+
+''SetCaption Brush7, STR$(lesser(areadim.a, Control(Area).Width / 80 / 1))
+
+'areadim.a = lesser(areadim.a, Control(Area).Width / 80 / 1)
+'''SetCaption Brush8, STR$(lesser(areadim.z, Control(Area).Height / 53 / 1))
+'areadim.z = lesser(areadim.z, Control(Area).Height / 53 / 1)
 
 areadim.a = lesser(areadim.a + 1, Control(Area).Width / 80 / 1)
 ''SetCaption Brush8, STR$(lesser(areadim.z, Control(Area).Height / 53 / 1))
@@ -1812,13 +1947,23 @@ FUNCTION greater## (c1##, c2##): IF c1## > c2## THEN greater## = c1## ELSE great
 END FUNCTION
 
 
+SUB SetFlag (fname AS _BYTE): fname = True: END SUB: SUB UnsetFlag (fname AS _BYTE): fname = False: END SUB
+
+
 SUB PaintYou (targ AS LONG, tile_id AS INTEGER)
 '
-SELECT CASE tile_id
-    CASE 0: LoadImage Control(targ), "res_mb/blnk.room.jpg"
-    CASE 1: LoadImage Control(targ), "res_mb/std.room.jpg"
-    CASE 2: LoadImage Control(targ), "res_mb/straight.jpg"
-END SELECT
+'SELECT CASE tile_id
+'    CASE 0: LoadImage Control(targ), "res_mb/blnk.room.jpg"
+'    CASE 1: LoadImage Control(targ), "res_mb/std.room.jpg"
+'    CASE 2: LoadImage Control(targ), "res_mb/straight.jpg"
+'END SELECT
+
+BeginDraw targ
+
+
+_PUTIMAGE , happres(tile_id)
+EndDraw targ
+
 END SUB
 
 SUB MapResource (res_id AS LONG, ctrl_id AS LONG)
@@ -1879,6 +2024,57 @@ SWAP rooms(LocTrans(which)), rooms(LocTrans(targ))
 
 END SUB
 
+SUB cancelrsz (errorspec AS _BYTE)
+' & &  &  & &  &  & &  &  & &  &  & &  &  & &  &
+'           Prevent dirtying of a layout by limiting resize
+'
+'                      errorspec = 1 : Width ineligible
+'                      errorspec = 2 : Height ineligible
+'                      errorspec = 3 : Both ineligible
+hScreenmode = 0
+SHARED __orgwidtht_Area, __orgheight_Area
+approvedWidth = __orgwidtht_Area
+approvedheight = __orgheight_Area
+DIM hPrep AS LONG
+SELECT CASE errorspec
+    CASE 0 'approved
+        ' make update base w & h
+        'PlaceToScale True
+        '
+    CASE 1: hPrep = _NEWIMAGE(approvedWidth, _HEIGHT(hScreenmode), 32)
+    CASE 2: hPrep = _NEWIMAGE(_WIDTH(hScreenmode), approvedheight, 32)
+    CASE 3: hPrep = _NEWIMAGE(approvedWidth, approvedheight, 32)
+END SELECT
+_PUTIMAGE , hScreenmode, hPrep
+SCREEN hPrep 'better: use safescreen
+
+'x'_fullscreen :_deslay .35:_fullscreen _off
+
+'if hScreenmode
+'else
+'end if
+
+END SUB
+
+SUB PathOrSwap
+
+
+
+
+IF doing_slide THEN
+    '
+    IF Control(Dyn1).Left < lb1 THEN m_bump_x = lb1 - Control(Dyn1).Left: Control(Dyn1).Left = lb1: m_to_a = True
+    IF Control(Dyn1).Top < lb2 THEN m_bump_y = lb2 - Control(Dyn1).Top: Control(Dyn1).Top = lb2: m_to_a = True
+    IF Control(Dyn1).Left > ub1 THEN m_bump_x = ub1 - Control(Dyn1).Left: Control(Dyn1).Left = ub1: m_to_a = True
+    IF Control(Dyn1).Top > ub2 THEN m_bump_y = ub2 - Control(Dyn1).Top: Control(Dyn1).Top = ub2: m_to_a = True
+    IF m_to_a THEN _MOUSEMOVE __UI_DragX + m_bump_x, __UI_DragY + m_bump_y
+END IF
+
+END SUB
+
+
+
+
 SUB nonworking
 DIM dummy AS __UI_ControlTYPE
 dummy.ID = __UI_NewControl(__UI_Type_Frame, "Frame1", Control(Frame1).Width, Control(Frame1).Height, Control(Frame1).Left, Control(Frame1).Top, 0)
@@ -1889,6 +2085,9 @@ SWAP Control(dummy.ID).ID, Control(Frame1).ID
 __UI_DestroyControl dummy
 ' would this work in place of the ccursor destroy
 END SUB
+
+
+
 
 SUB diagnosticalinit
 
@@ -1984,7 +2183,7 @@ diag_call_reg "pzv" + LTRIM$(STR$(zscl))
 
 'derive new scroll position - ex, if a factor is 2/3 then 3/2 are now to be shown, and left offscreen part, mulxed by factor gains (1-3/2) /2 of what's shown. resulting sum if positive divved by original left offscreen part makes new scroll pos
 
-';
+
 
 
 
@@ -1993,6 +2192,8 @@ END SUB
 
 
 SUB InVisiblate
+
+'hide the unimplemented bits, so they're out of the way
 
 'Control(ZoomBar).Hidden = True
 
