@@ -74,4 +74,19 @@ Spent some time plotting how to simplify my design. No time to work on MB this w
 various business prevents me from updating this project, but I'm hoping to have time to get back on it before the month is out.
 
 
+[errors seen record]
+723 in InForm.ui when resizing
+5097 when working a dd list
 
+723 (& 2089 ) when trying to resize (667, 819 when resizing smaller)
+724, 799 + 723 in InForm.ui when resizing
+
+
+
+Tues 10/31
+I think I'll modify the InForm control type to hold additional values, enabling me to use a range of widgets as data containers
+
+Wed
+I had an epiphany after I decided to re-do the majority of my input handling code. even before I tried InForm's built in capability I suspected I'd need to customize some of the routines, as it became apparent the framework doesn't support overlapping widgets the way I needed it to.  while it's very frustrating, I felt I could crack the puzzle of something  , but my mouse buttons went crazy each time I ran the project.
+
+Turns out I was setting my double click detector in the mouse down sub, which of course would eradicate the previous stored value, making it depend on the duration between mouse down and mouse up rather than two mouse up's as I intended.  this was a major breakthrough, at least in the area of morale, as I found myself in charge again for the time being.
