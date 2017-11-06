@@ -90,3 +90,24 @@ Wed
 I had an epiphany after I decided to re-do the majority of my input handling code. even before I tried InForm's built in capability I suspected I'd need to customize some of the routines, as it became apparent the framework doesn't support overlapping widgets the way I needed it to.  while it's very frustrating, I felt I could crack the puzzle of something  , but my mouse buttons went crazy each time I ran the project.
 
 Turns out I was setting my double click detector in the mouse down sub, which of course would eradicate the previous stored value, making it depend on the duration between mouse down and mouse up rather than two mouse up's as I intended.  this was a major breakthrough, at least in the area of morale, as I found myself in charge again for the time being.
+
+Thurs
+Something I realized that could have caused trouble down the road was the range of widgets I would set up, and then refer to: the problem was my routine for swapping around widgets, to affect z order... I'd need to update the controlrange.min and .max, but I've decided that a more flexible way would be to ask Fellippe to insert a separate array for display order. I've thought up a function or two that should suffice for manipulating this order in the face of requirements such as I described, placing selected items higher & more visible while leaving alone the control array, as seems proper
+
+I made a programming blunder today that makes me ashamed. Without asking the developer of InForm if he was willing to commit to a new way of storing his z orders, I spent 2 hours working out a sub to finely control the z order under that hypothetical system. Of course I never imagined it would take me that long, but this is the kind of decisionmaking which leads to wasting of time, and however effective the result, is simply not worth the input labor. My project was set back a long time because of this.
+
+
+Sun
+Inform Editor crapped out yesterday. Began to suddenly speak about unable to load its Preview Component. Rebuilding the program solved this
+
+Ended the day completing
+expandrooms - main sub to alter the maze data arrays
+adjusted how maze view setup is called, hopefully paving the way for a generalized call
+
+Also worked on
+showpath - new prototype draw commands
+page switch functionality
+download of the buffer
+upload sub (began)
+
+I noticed that child-less frames are always drawn last, making them useful as masks - but difficult to understand for a novice unfamiliar with the drawing order in InForm
