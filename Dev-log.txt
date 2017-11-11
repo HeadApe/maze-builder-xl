@@ -111,3 +111,25 @@ download of the buffer
 upload sub (began)
 
 I noticed that child-less frames are always drawn last, making them useful as masks - but difficult to understand for a novice unfamiliar with the drawing order in InForm
+
+Mon
+I've encountered additional work, in the form of my paths arrays all requiring translation. it seems that 80% of programming is translation functions, and any attempts to circumvent that are just silliness.
+
+Done also: CarryConnections, WipePath. tileclear? addmodifier..?
+
+Stared for a long while at markdownpage 
+While working on the uploadview sub I realized that my plan for having a paths buffer/library array was doomed. here's the problem: I'm trying to avoid translating every single path end from non-buffer to buffer value. but my iterater which is how I wanted uploadview to go, can't handle the task. iterating a second time might do it, actually, but this implementation would be quite slow when zoomed out, given the repeated view changes I envision when scrolling. more evidence that both scrolling and zooming might be out of the question. looks like I should've never gone with this fancy data inter-storing. but I can think of novel solutions tomorrow at work. one thing that presents itself, when user moves or deletes a room with a path connecting outside of the current view, then manually change the view to encompass the absent path ends, prior to enacting. the view will thus never need to hold unchangable links
+
+in my next project, I'll just write translation functions from the beginning, until I run out of desire or my eyes bleed, and then if I still want to look at a qbasic window again, I'll do the rest of the project after.
+
+Tues
+Tested out my page changing routines. found a bug with path removes. at this point I see a fault in either markdown or uploadview causing the rebuffer to fail. I only loaded about 5 pages before it got unbearably slow. it's time to consider pseudo controls for larger zoomed views - replacing the frames I currently have containing each of my tiles; on the other hand it doesn't appear as though large zooms will be feasible anyway, except with high resolution room graphics, which amounts to the same thing. so as it is the application should grade just under the performance degrade point, on this platform anyway. For paths I think I'm going to keep off view ends stored as a -1 indicating that that end should remain unedited while the end coming in view can be changed as required by room moves. room deletes however will need special treatment
+
+Thurs
+found a careless error with range checks when uploading paths
+focusing on page switching
+why won't doubleclick detection work...
+added diagnostic commands to reloadview, but it broke the entire program somehow
+
+Fri
+Despondent
