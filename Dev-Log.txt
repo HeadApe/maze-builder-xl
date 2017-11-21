@@ -171,3 +171,13 @@ don't act
 
 Monday
 It does appear that my computer system is messed up, or virused. I will need some time to get another hard drive loaded up. I'll then want to test my last few builds, to see whether the disk access subs show improvement.
+
+Fri
+isolated the sub giving strange behavior, but cause is mysterious
+partial working out of maze profile save code
+no clue why, but link writer sub doesn't accept more than one elab value
+
+
+Mon
+
+My check of the library array for room links always returned no match, and this was messing up my addpath sub. turns out for rewrite #3, I forgot to update my parameter in the sub declaration. I guess I really should never have attempted this degree of complexity. it makes me feel like the project is de-valued when it takes this long to crank out. I'd rather be doing something else w my time
